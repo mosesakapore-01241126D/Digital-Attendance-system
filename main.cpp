@@ -13,6 +13,25 @@ public:
         indexNumber = i;
     }
 };
+
+#include <map>
+
+class AttendanceSession {
+public:
+    string courseCode;
+    string date;
+    string startTime;
+    int duration;
+
+    map<string, string> attendance;
+
+    AttendanceSession(string code, string d, string time, int dur) {
+        courseCode = code;
+        date = d;
+        startTime = time;
+        duration = dur;
+    }
+};
 vector<Student> students;
 void saveStudentsToFile() {
     ofstream file("students.txt");
@@ -24,6 +43,7 @@ void saveStudentsToFile() {
 
     file.close();
 }
+vector<AttendanceSession> sessions;
 
 void addStudent() {
     string name;

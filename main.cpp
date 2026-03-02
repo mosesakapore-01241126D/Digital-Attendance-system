@@ -1,6 +1,9 @@
 #include <iostream>
-#include <fstream>
 #include <vector>
+#include <map>
+#include <fstream>
+#include <sstream>
+#include <iomanip>
 using namespace std;
 
 class Student {
@@ -181,8 +184,106 @@ void markAttendance() {
     cout << "Absent: " << absent << endl;
     cout << "Late: " << late << endl;
 }
+#include <sstream>
+void saveSessionsToFile() {
+    ofstream file("sessions.txt");
+
+    for (int i = 0; i < sessions.size(); i++) {
+        file << sessions[i].courseCode << ","
+             << sessions[i].date << ","
+             << sessions[i].startTime << ","
+             << sessions[i].duration << endl;
+
+        for (auto record : sessions[i].attendance) {
+            file << record.first << ","
+                 << record.second << endl;
+        }
+
+        file << "END" << endl;
+    }
+
+    file.close();
+}void loadSessionsFromFile() {
+    ifstream file("sessions.txt");
+    string line;
+
+    while (getline(file, line)) {
+        if (line.empty()) continue;
+
+        string code, date, time;
+        int duration;
+
+        stringstream ss(line);
+        getline(ss, code, ',');
+        getline(ss, date, ',');
+        getline(ss, time, ',');
+        ss >> duration;
+
+        AttendanceSession session(code, date, time, duration);
+
+        while (getline(file, line) && line != "END") {
+            string index, status;
+            stringstream ss2(line);
+            getline(ss2, index, ',');
+            getline(ss2, status);
+
+            session.attendance[index] = status;
+        }
+
+        sessions.push_back(session);
+    }
+
+    file.close();
+}
+#include <iomanip> // for setw if needed
+
+void exportToExcel() {
+    if (sessions.empty()) {
+        cout << "No sessions available.\n";
+        return;
+    }
+
+    cout << "\nAvailable Sessions:\n";
+    for (int i = 0; i < sessions.size(); i++) {
+        cout << i << ". "
+             << sessions[i].courseCode
+             << " - "
+             << sessions[i].date << endl;
+    }
+
+    int index;
+    cout << "Select session number to export: ";
+    cin >> index;
+
+    if (index < 0 || index >= sessions.size()) {
+        cout << "Invalid session number.\n";
+        return;
+    }
+
+    // Create CSV file
+    string filename = sessions[index].courseCode + "_" + sessions[index].date + ".csv";
+    ofstream file(filename);
+
+    // Write headers
+    file << "Index Number,Student Name,Attendance Status\n";
+
+    for (int i = 0; i < students.size(); i++) {
+        string status = "Absent"; // default
+        if (sessions[index].attendance.count(students[i].indexNumber)) {
+            status = sessions[index].attendance[students[i].indexNumber];
+        }
+
+        file << students[i].indexNumber << ","
+             << students[i].name << ","
+             << status << "\n";
+    }
+
+    file.close();
+    cout << "Exported to Excel-compatible CSV: " << filename << endl;
+}
 int main() {
     loadStudentsFromFile();
+    loadSessionsFromFile();
 
     int choice;
 
@@ -193,7 +294,8 @@ int main() {
        cout << "3. Create Lecture Session\n";
        cout << "4. Mark Attendance\n";
        cout << "5. Show Attendance Summaary\n";
-       cout << "6. Exit\n";
+       cout << "6. Export Session to Excel\n";
+       cout << "7. Exit\n";
        cout << "Choose an option: ";
        cin >> choice;
 
@@ -206,21 +308,26 @@ int main() {
         break;
     case 3:
         createSession();
+        saveSessionsToFile();
         break;
     case 4:
         markAttendance();
+        saveSessionsToFile();
         break;    
     case 5: 
          showAttendanceSummary();
          break;
     case 6:
+         exportToExcel();
+         break;
+    case 7:
         cout << "Exiting program...\n";
         break;
     default:
         cout << "Invalid choice. Try again.\n";
 }
 
-    } while(choice != 6);
+    } while(choice != 7);
 
     return 0;
 }
